@@ -82,6 +82,48 @@ def forward_selection(data):
     print(f"Finished search. The best feature subset is {best_overall_features}, which has an accuracy of {best_overall_accuracy * 100:.1f}%")
     return best_overall_features
 
+def backward_elimination(data):
+    num_features = len(data[0]) - 1 
+    # start with list of all features [1, 2, 3... num_features]
+    current_set_of_features = list(range(1, num_features + 1))
+    
+    # calc the baseline accuracy with all features
+    baseline_accuracy = leave_one_out_cross_validation(data, current_set_of_features)
+    best_overall_accuracy = baseline_accuracy
+    best_overall_features = current_set_of_features.copy()
+
+    print(f"\nBeginning Backward Elimination search.")
+    print(f"Using all features {current_set_of_features} accuracy is {baseline_accuracy * 100:.1f}%\n")
+
+    for i in range(num_features - 1): # stop when we have 1 feature left
+        feature_to_remove_at_this_level = None
+        best_so_far_accuracy = 0
+
+        # test removing every currently active feature
+        for k in current_set_of_features:
+            features_to_try = current_set_of_features.copy()
+            features_to_try.remove(k)
+            
+            accuracy = leave_one_out_cross_validation(data, features_to_try)
+            
+            print(f"\tRemoving feature {k}, using feature(s) {features_to_try} accuracy is {accuracy * 100:.1f}%")
+
+            if accuracy > best_so_far_accuracy:
+                best_so_far_accuracy = accuracy
+                feature_to_remove_at_this_level = k
+
+        # remove worst feature found at this level
+        current_set_of_features.remove(feature_to_remove_at_this_level)
+        print(f"\nFeature set {current_set_of_features} was best, accuracy is {best_so_far_accuracy * 100:.1f}%\n")
+        
+        # track all-time best feature set
+        if best_so_far_accuracy > best_overall_accuracy:
+            best_overall_accuracy = best_so_far_accuracy
+            best_overall_features = current_set_of_features.copy()
+
+    print(f"Finished. The best feature subset is {best_overall_features}, which has an accuracy of {best_overall_accuracy * 100:.1f}%")
+    return best_overall_features
+
 # --- TESTING ---
 if __name__ == "__main__":
     try:
@@ -90,7 +132,12 @@ if __name__ == "__main__":
         print(f"Type in the name of the file to test: {file_name}")
         
         data = load_data(file_name)
+        
+        print("\n--- Running Forward Selection ---")
         forward_selection(data)
+        
+        print("\n--- Running Backward Elimination ---")
+        backward_elimination(data)
         
     except FileNotFoundError:
         print(f"Please make sure '{file_name}' is in your workspace.")
