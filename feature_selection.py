@@ -1,4 +1,5 @@
 import math
+import time
 
 def load_data(filename):
     """
@@ -54,6 +55,10 @@ def forward_selection(data):
     print(f"This dataset has {num_features} features (not including the class attribute), with {len(data)} instances.")
     print("Beginning search.\n")
 
+    # early stopping vars
+    previous_level_accuracy = 0
+    decrease_counter = 0
+
     for i in range(num_features):
         feature_to_add_at_this_level = None
         best_so_far_accuracy = 0
@@ -79,7 +84,20 @@ def forward_selection(data):
             best_overall_accuracy = best_so_far_accuracy
             best_overall_features = current_set_of_features.copy()
 
-    print(f"Finished search. The best feature subset is {best_overall_features}, which has an accuracy of {best_overall_accuracy * 100:.1f}%")
+        # early stop logic: check if accuracy dropped compared to the previous level
+        if best_so_far_accuracy < previous_level_accuracy:
+            decrease_counter += 1
+            print(f"Warning: Accuracy decreased. (Decrease count: {decrease_counter})")
+            if decrease_counter >= 2:
+                print("Accuracy has decreased at two consecutive levels. Halting search early to save time.")
+                break # Stop the search
+        else:
+            # reset counter if accuracy improved/stayed the same
+            decrease_counter = 0 
+
+        previous_level_accuracy = best_so_far_accuracy
+
+    print(f"Finished. The best feature subset is {best_overall_features}, which has an accuracy of {best_overall_accuracy * 100:.1f}%")
     return best_overall_features
 
 def backward_elimination(data):
@@ -95,11 +113,14 @@ def backward_elimination(data):
     print(f"\nBeginning Backward Elimination search.")
     print(f"Using all features {current_set_of_features} accuracy is {baseline_accuracy * 100:.1f}%\n")
 
-    for i in range(num_features - 1): # stop when we have 1 feature left
+    # Early stopping variables
+    previous_level_accuracy = baseline_accuracy
+    decrease_counter = 0
+
+    for i in range(num_features - 1):
         feature_to_remove_at_this_level = None
         best_so_far_accuracy = 0
 
-        # test removing every currently active feature
         for k in current_set_of_features:
             features_to_try = current_set_of_features.copy()
             features_to_try.remove(k)
@@ -116,12 +137,24 @@ def backward_elimination(data):
         current_set_of_features.remove(feature_to_remove_at_this_level)
         print(f"\nFeature set {current_set_of_features} was best, accuracy is {best_so_far_accuracy * 100:.1f}%\n")
         
-        # track all-time best feature set
+        # remove worst feature found at this level
         if best_so_far_accuracy > best_overall_accuracy:
             best_overall_accuracy = best_so_far_accuracy
             best_overall_features = current_set_of_features.copy()
 
-    print(f"Finished. The best feature subset is {best_overall_features}, which has an accuracy of {best_overall_accuracy * 100:.1f}%")
+        # Early Stopping Logic: Check if accuracy dropped compared to the previous level
+        if best_so_far_accuracy < previous_level_accuracy:
+            decrease_counter += 1
+            print(f"Warning: Accuracy decreased. (Decrease count: {decrease_counter})")
+            if decrease_counter >= 2:
+                print("Accuracy has decreased at two consecutive levels. Halting search early to save time.")
+                break # Stop the search
+        else:
+            decrease_counter = 0 
+
+        previous_level_accuracy = best_so_far_accuracy
+
+    print(f"Finished search. The best feature subset is {best_overall_features}, which has an accuracy of {best_overall_accuracy * 100:.1f}%")
     return best_overall_features
 
 # --- TESTING ---
@@ -133,11 +166,23 @@ if __name__ == "__main__":
         
         data = load_data(file_name)
         
+        # print("\n--- Running Forward Selection ---")
+        # forward_selection(data)
+        
+        # print("\n--- Running Backward Elimination ---")
+        # backward_elimination(data)
+
         print("\n--- Running Forward Selection ---")
+        start_time_forward = time.time()
         forward_selection(data)
+        end_time_forward = time.time()
+        print(f"Forward Selection took {(end_time_forward - start_time_forward) / 60:.2f} minutes.")
         
         print("\n--- Running Backward Elimination ---")
+        start_time_backward = time.time()
         backward_elimination(data)
+        end_time_backward = time.time()
+        print(f"Backward Elimination took {(end_time_backward - start_time_backward) / 60:.2f} minutes.")
         
     except FileNotFoundError:
         print(f"Please make sure '{file_name}' is in your workspace.")
