@@ -70,11 +70,11 @@ if __name__ == "__main__":
 
     # --- 5. Extra Credit: Dry Bean Dataset (Forward Selection) ---
     extra_fwd_x = [
-        '{}', '{2}', '{2, [X]}', '...', 
-        '{[BEST_SUBSET_MINUS_1]}', '{[BEST_SUBSET]}', '{[NEXT_SUBSET]}'
+        '{}', '{2}', '{2, 14}', '...', 
+        '{11 feats}', '{12 feats (Best)}', '{13 feats}'
     ]
     extra_fwd_y = [
-        14.2, 55.4, 0.0, 0,
-        0.0, 0.0, 0.0 # Placeholder values, replace with real values when available.
+        14.2, 55.4, 84.9, 0, 
+        90.7, 90.7, 90.7
     ]
     plot_search_trace('Extra Credit: Dry Bean Dataset (Forward)', extra_fwd_x, extra_fwd_y, 'fig5_extra_credit.png')
